@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Shopify session storage
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+// B2B Registration requests
+model Registration {
+  id              String   @id @default(cuid())
+  shop            String
+  shopifyCustomerId String?
+  
+  // Business info
+  companyName     String
+  ico             String?    // Business registration number
+  dic             String?    // Tax ID
+  icDph           String?    // VAT ID
+  contactPerson   String
+  email           String
+  phone           String?
+  address         String?
+  city            String?
+  postalCode      String?
+  country         String    @default("SK")
+  
+  // Status
+  status          String    @default("pending") // pending, approved, rejected
+  segmentId       String?
+  rejectionReason String?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  approvedAt      DateTime?
+  
+  segment         Segment?  @relation(fields: [segmentId], references: [id])
+
+  @@index([shop])
+  @@index([status])
+  @@index([email])
+}
+
+// B2B Customer segments
+model Segment {
+  id            String   @id @default(cuid())
+  shop          String
+  name          String          // e.g., "Gold", "Silver", "Bronze"
+  description   String?
+  
+  // Default discount for this segment (percentage)
+  defaultDiscount Float  @default(0)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  registrations Registration[]
+  pricingRules  PricingRule[]
+  customers     B2BCustomer[]
+
+  @@unique([shop, name])
+  @@index([shop])
+}
+
+// B2B Customer records
+model B2BCustomer {
+  id                String   @id @default(cuid())
+  shop              String
+  shopifyCustomerId String
+  segmentId         String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  segment           Segment? @relation(fields: [segmentId], references: [id])
+
+  @@unique([shop, shopifyCustomerId])
+  @@index([shop])
+  @@index([segmentId])
+}
+
+// Pricing rules per segment
+model PricingRule {
+  id            String   @id @default(cuid())
+  shop          String
+  segmentId     String
+  
+  // Rule type: "percentage", "fixed", "vendor", "product_type"
+  ruleType      String
+  
+  // Target: vendor name, product type, collection handle, or "*" for all
+  target        String   @default("*")
+  
+  // Discount value (percentage or fixed amount)
+  discountValue Float
+  
+  // Priority (higher = applied first)
+  priority      Int      @default(0)
+  
+  // Active flag
+  isActive      Boolean  @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  segment       Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@index([shop, segmentId])
+  @@index([shop, ruleType, target])
+}

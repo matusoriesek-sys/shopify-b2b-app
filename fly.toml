@@ -1,0 +1,24 @@
+# Fly.io deployment config
+# Run: fly launch --no-deploy
+# Then: fly deploy
+
+app = "shopify-b2b-app"
+primary_region = "fra"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[mounts]
+  source = "data"
+  destination = "/data"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

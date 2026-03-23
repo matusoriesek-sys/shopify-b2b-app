@@ -1,0 +1,28 @@
+api_version = "2024-10"
+
+[[extensions]]
+name = "B2B Discount"
+handle = "b2b-discount"
+type = "function"
+
+  [extensions.build]
+  command = "cargo wasi build --release"
+  path = "target/wasm32-wasi/release/b2b-discount.wasm"
+  watch = ["src/**/*.rs"]
+
+  [extensions.targeting]
+
+    [[extensions.targeting.target]]
+    target = "purchase.product-discount.run"
+    input_query = "src/run.graphql"
+
+    [[extensions.targeting.target]]
+    target = "purchase.product-discount.fetch"
+    export = "fetch"
+
+  [extensions.ui]
+  enable_create = true
+
+  [extensions.ui.paths]
+  create = "/"
+  details = "/"
