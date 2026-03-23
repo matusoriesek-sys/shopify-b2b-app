@@ -20,6 +20,9 @@ RUN npx prisma generate
 # Build the Remix app
 RUN npm run build
 
+# Verify build output exists
+RUN ls -la build/server/ && echo "Build OK"
+
 # Create data directory for SQLite
 RUN mkdir -p /data
 
@@ -31,5 +34,18 @@ ENV NODE_ENV=production
 # Expose port
 EXPOSE 3000
 
-# At runtime: migrate DB then start
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+# Start script with proper error handling
+COPY <<'STARTSCRIPT' /app/start.sh
+#!/bin/sh
+set -e
+echo "=== Running Prisma migrations ==="
+npx prisma migrate deploy
+echo "=== Migrations done, starting server ==="
+echo "PORT=$PORT"
+echo "SHOPIFY_APP_URL=$SHOPIFY_APP_URL"
+exec npx remix-serve ./build/server/index.js
+STARTSCRIPT
+
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
