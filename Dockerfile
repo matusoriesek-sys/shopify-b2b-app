@@ -1,17 +1,20 @@
-FROM node:18-alpine
+FROM node:18-slim
+
+# Install OpenSSL (required by Prisma)
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json ./
 
-# Install all dependencies (no lockfile, so use npm install)
+# Install all dependencies
 RUN npm install --production=false
 
 # Copy application code
 COPY . .
 
-# Generate Prisma client (doesn't need DB connection)
+# Generate Prisma client
 RUN npx prisma generate
 
 # Build the Remix app
