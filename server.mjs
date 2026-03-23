@@ -1,8 +1,8 @@
 import { createServer } from "http";
+import { execSync } from "child_process";
 
 const PORT = process.env.PORT || 3000;
 
-// Catch everything
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT:', err.message, err.stack);
 });
@@ -10,40 +10,34 @@ process.on('unhandledRejection', (err) => {
   console.error('UNHANDLED:', err);
 });
 
-console.log("server.mjs starting...");
+console.log("=== server.mjs starting ===");
 console.log("PORT:", PORT);
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("SHOPIFY_APP_URL:", process.env.SHOPIFY_APP_URL);
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+
+// Run prisma migrate synchronously
+try {
+  console.log("Running prisma migrate...");
+  const output = execSync("npx prisma migrate deploy", { 
+    encoding: "utf8", 
+    timeout: 30000,
+    stdio: "pipe" 
+  });
+  console.log("Prisma migrate output:", output);
+} catch (err) {
+  console.error("Prisma migrate error:", err.message);
+  // Continue anyway - might already be migrated
+}
 
 let handler = null;
 let startupError = null;
 
-async function loadApp() {
-  try {
-    console.log("Loading remix build...");
-    const build = await import("./build/server/index.js");
-    console.log("Build loaded! Keys:", Object.keys(build));
-    
-    const { createRequestHandler } = await import("@remix-run/node");
-    handler = createRequestHandler(build, "production");
-    console.log("Request handler created successfully");
-  } catch (err) {
-    startupError = err;
-    console.error("STARTUP ERROR:", err.message);
-    console.error(err.stack);
-  }
-}
-
-// Start HTTP server immediately so healthcheck passes
+// Start HTTP server immediately
 const server = createServer(async (req, res) => {
   if (!handler) {
-    if (startupError) {
-      res.writeHead(500, { "Content-Type": "text/plain" });
-      res.end(`Startup Error: ${startupError.message}\n${startupError.stack}`);
-    } else {
-      res.writeHead(503, { "Content-Type": "text/plain" });
-      res.end("Loading...");
-    }
+    res.writeHead(startupError ? 500 : 200, { "Content-Type": "text/plain" });
+    res.end(startupError ? `Error: ${startupError.message}` : "Loading...");
     return;
   }
   
@@ -62,44 +56,46 @@ const server = createServer(async (req, res) => {
         })
       : undefined;
     
-    const request = new Request(url.toString(), {
-      method: req.method,
-      headers,
-      body,
-    });
-    
+    const request = new Request(url.toString(), { method: req.method, headers, body });
     const response = await handler(request);
     
     const resHeaders = {};
-    response.headers.forEach((value, key) => {
-      resHeaders[key] = value;
-    });
+    response.headers.forEach((value, key) => { resHeaders[key] = value; });
     res.writeHead(response.status, resHeaders);
     
     if (response.body) {
       const reader = response.body.getReader();
-      const pump = async () => {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          res.write(value);
-        }
-        res.end();
-      };
-      await pump();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+      res.end();
     } else {
-      const text = await response.text();
-      res.end(text);
+      res.end(await response.text());
     }
   } catch (err) {
     console.error("Request error:", err.message);
-    res.writeHead(500, { "Content-Type": "text/plain" });
+    res.writeHead(500);
     res.end("Internal Server Error");
   }
 });
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`HTTP server listening on 0.0.0.0:${PORT}`);
-  // Load app after server is listening (so healthcheck passes)
-  loadApp();
+  
+  // Load Remix app asynchronously
+  import("./build/server/index.js")
+    .then(build => {
+      console.log("Build loaded, keys:", Object.keys(build));
+      return import("@remix-run/node").then(({ createRequestHandler }) => {
+        handler = createRequestHandler(build, "production");
+        console.log("✅ Remix app ready!");
+      });
+    })
+    .catch(err => {
+      startupError = err;
+      console.error("❌ Failed to load app:", err.message);
+      console.error(err.stack);
+    });
 });
