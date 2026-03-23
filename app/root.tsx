@@ -1,3 +1,5 @@
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -5,9 +7,18 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
 
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return json({
+    apiKey: process.env.SHOPIFY_API_KEY || "",
+  });
+};
+
 export default function App() {
+  const { apiKey } = useLoaderData<typeof loader>();
+
   return (
     <html>
       <head>
@@ -20,6 +31,10 @@ export default function App() {
         />
         <Meta />
         <Links />
+        <script
+          src="https://cdn.shopify.com/shopifycloud/app-bridge.js"
+          data-api-key={apiKey}
+        ></script>
       </head>
       <body>
         <Outlet />
