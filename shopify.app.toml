@@ -1,6 +1,6 @@
 name = "B2B Pricing"
 client_id = "fab205f5f4460bcfed44c7a6fbcfb40c"
-application_url = "https://shopify-b2b-app-production-9fd2.up.railway.app"
+application_url = "https://shopify-b2b-app-production.up.railway.app"
 embedded = true
 
 [access_scopes]
@@ -8,16 +8,16 @@ scopes = "read_customers,write_customers,read_products,write_products,read_order
 
 [auth]
 redirect_urls = [
-  "https://shopify-b2b-app-production-9fd2.up.railway.app/auth/callback",
-  "https://shopify-b2b-app-production-9fd2.up.railway.app/auth/shopify/callback",
-  "https://shopify-b2b-app-production-9fd2.up.railway.app/api/auth/callback"
+  "https://shopify-b2b-app-production.up.railway.app/auth/callback",
+  "https://shopify-b2b-app-production.up.railway.app/auth/shopify/callback",
+  "https://shopify-b2b-app-production.up.railway.app/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-10"
 
 [app_proxy]
-url = "https://shopify-b2b-app-production-9fd2.up.railway.app/proxy"
+url = "https://shopify-b2b-app-production.up.railway.app/proxy"
 subpath = "b2b"
 prefix = "apps"
 
