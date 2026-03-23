@@ -1,26 +1,20 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-client_id = "fab205f5f4460bcfed44c7a6fbcfb40c"
 name = "B2B Pricing"
+client_id = "fab205f5f4460bcfed44c7a6fbcfb40c"
 application_url = "https://shopify-b2b-app-production.up.railway.app"
+embedded = true
 
 [access_scopes]
 scopes = "read_customers,write_customers,read_products,write_products,read_orders,write_discounts,read_discounts,read_metaobjects,write_metaobjects"
 
 [auth]
-redirect_urls = [ "https://shopify-b2b-app-production.up.railway.app/auth/callback" ]
+redirect_urls = [
+  "https://shopify-b2b-app-production.up.railway.app/auth/callback",
+  "https://shopify-b2b-app-production.up.railway.app/auth/shopify/callback",
+  "https://shopify-b2b-app-production.up.railway.app/api/auth/callback"
+]
 
 [webhooks]
 api_version = "2024-10"
-
-  [webhooks.subscriptions]
-
-  [[webhooks.subscriptions]]
-  topics = [ "customers/create", "customers/update" ]
-  uri = "/webhooks"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks"
 
 [app_proxy]
 url = "https://shopify-b2b-app-production.up.railway.app/proxy"
@@ -29,7 +23,3 @@ prefix = "apps"
 
 [pos]
 embedded = false
-
-[build]
-automatically_update_urls_on_dev = true
-dev_store_url = "mpm-slovakia.myshopify.com"
