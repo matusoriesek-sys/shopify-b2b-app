@@ -1,5 +1,6 @@
 FROM node:18-slim
 
+# Build v4 - force fresh build
 # Install OpenSSL (required by Prisma)
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
