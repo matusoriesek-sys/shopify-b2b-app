@@ -5,10 +5,10 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node -e \"const http = require('http'); const s = http.createServer((q,r) => { r.writeHead(200); r.end('ok'); }); s.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log('LISTENING on', process.env.PORT));\"",
+    "startCommand": "npx prisma migrate deploy && node server.mjs",
     "healthcheckPath": "/",
-    "healthcheckTimeout": 60,
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyMaxRetries": 10
   }
 }
